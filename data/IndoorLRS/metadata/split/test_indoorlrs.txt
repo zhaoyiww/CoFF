@@ -1,0 +1,5 @@
+apartment
+bedroom
+boardroom
+lobby
+loft
