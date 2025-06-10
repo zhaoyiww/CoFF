@@ -4,7 +4,7 @@
   <p align="center">
     <a href="https://github.com/zhaoyiww/CoFF"><img src="https://img.shields.io/badge/python-3670A0?style=flat-square&logo=python&logoColor=ffdd54" /></a>
     <a href="https://github.com/zhaoyiww/CoFF"><img src="https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black" /></a>
-    <a href="https://arxiv.org/pdf/2505.13088"><img src="https://img.shields.io/badge/Paper-pdf-<COLOR>.svg?style=flat-square" /></a>
+    <a href="https://www.sciencedirect.com/science/article/pii/S0924271625001935"><img src="https://img.shields.io/badge/Paper-pdf-<COLOR>.svg?style=flat-square" /></a>
     <a href="https://github.com/zhaoyiww/CoFF/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" /></a>
   </p>  
 
@@ -30,7 +30,7 @@
 <img src="assets/method_overview_isprs_coff_25.jpg" alt="Logo" style="width:100%; height:auto;">
 </div>
 
-This is the official Pytorch implementation of the paper: [paper](https://arxiv.org/abs/2505.13088)
+This is the official Pytorch implementation of the paper: [Cross-Modal Feature Fusion for Robust Point Cloud Registration with Ambiguous Geometry](https://www.sciencedirect.com/science/article/pii/S0924271625001935), published in the ISPRS Journal.
 
 ## Abstract
 
@@ -41,4 +41,21 @@ Point cloud registration has seen significant advancements with the application 
 </details>
 
 ## TODO list
-- [ ] Upload the complete code for the paper.
+- [ ] Upload data preprocessing scripts.
+- [ ] Upload complete training and evaluation code.
+- [ ] Upload preprocessed data and pretrained model weights.
+
+## Citation
+
+If you find our code or paper useful, please cite:
+
+```bibtex
+@article{Wang2025CoFF,
+    title = {Cross-modal feature fusion for robust point cloud registration with ambiguous geometry},
+    author = {Zhaoyi Wang and Shengyu Huang and Jemil Avers Butt and Yuanzhou Cai and Matej Varga and Andreas Wieser},
+    journal = {ISPRS Journal of Photogrammetry and Remote Sensing},
+    volume = {227},
+    pages = {31--47},
+    year = {2025},
+}
+```
