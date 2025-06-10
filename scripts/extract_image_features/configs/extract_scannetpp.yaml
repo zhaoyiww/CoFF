@@ -1,0 +1,12 @@
+dir:
+  input_root: inputs/ScanNetpp/
+  output_root: outputs/ScanNetpp/
+  pretrain_root: ../../weights/resnet_50_pri3d.pth
+
+data:
+  depth_threshold: 0.1
+  img_feats_dim: 128
+  num_images: 3
+  dataset: ScanNetpp
+  benchmark_name: ScanNetpp_test         # ScanNetpp
+  fusion_type: average              # average, complement or random

@@ -1,0 +1,12 @@
+dir:
+  input_root: inputs/3DMatch/
+  output_root: outputs/3DMatch/
+  pretrain_root: ../../weights/resnet_50_pri3d.pth
+
+data:
+  depth_threshold: 0.1
+  img_feats_dim: 128
+  num_images: 3
+  dataset: 3DMatch
+  benchmark_name: train           # train, val, 3DMatch, 3DLoMatch
+  fusion_type: complement         # average, complement or random
