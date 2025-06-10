@@ -173,3 +173,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# large files
+weights/
+geometry/
+image/
+outputs/
