@@ -176,6 +176,8 @@ cython_debug/
 
 # large files
 weights/
+**/geometry/
 **/geometry/**
 **/image/**
+**/image/
 **/outputs/**
