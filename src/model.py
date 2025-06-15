@@ -4,7 +4,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from IPython import embed
 import numpy as np
 
 from src.backbone_3d.modules.ops import point_to_node_partition, index_select
@@ -96,7 +95,6 @@ class CoFF(nn.Module):
         len_ref_c_img = len_ref
         feats_c_img = self.proj_gnn(feats_c_img)
         scores_c_img = self.proj_score(feats_c_img)
-        # scores_c_img = self.classifier(feats_c_img)
 
         feats_gnn_norm_img = F.normalize(feats_c_img, p=2, dim=1).squeeze(0).transpose(0, 1)  # [N, C]
         scores_c_raw_img = scores_c_img.squeeze(0).transpose(0, 1)  # [N, 1]

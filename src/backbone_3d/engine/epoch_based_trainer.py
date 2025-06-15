@@ -1,11 +1,9 @@
 import os
 import os.path as osp
 from typing import Tuple, Dict
-
 import ipdb
 import torch
 import tqdm
-
 from src.backbone_3d.engine.base_trainer import BaseTrainer
 from utils.torch import to_cuda
 from utils.summary_board import SummaryBoard

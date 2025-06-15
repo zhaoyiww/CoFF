@@ -2,16 +2,12 @@ import sys
 import argparse
 import os.path as osp
 import time
-import json
 import abc
 from collections import OrderedDict
-
 import torch
 import torch.nn as nn
 import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
-import ipdb
-
 from utils.summary_board import SummaryBoard
 from utils.timer import Timer
 from utils.torch import all_reduce_tensors, release_cuda, initialize
@@ -137,7 +133,6 @@ class BaseTrainer(abc.ABC):
         model_state_dict = self.model.state_dict()
         # Remove '.module' prefix in DistributedDataParallel mode.
 
-        # model_img_state_dict = self.model_img.state_dict()
         if self.distributed:
             model_state_dict = OrderedDict([(key[7:], value) for key, value in model_state_dict.items()])
 
@@ -147,7 +142,6 @@ class BaseTrainer(abc.ABC):
             'epoch': self.epoch,
             'iteration': self.iteration,
             'model': model_state_dict
-            # 'model_img': model_img_state_dict
         }
         torch.save(state_dict, filename_save)
         self.logger.info('Model saved to "{}"'.format(filename_save))

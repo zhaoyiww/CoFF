@@ -4,7 +4,6 @@ import random
 from typing import Dict
 
 import numpy as np
-import torch
 import torch.utils.data
 
 from utils.common import (

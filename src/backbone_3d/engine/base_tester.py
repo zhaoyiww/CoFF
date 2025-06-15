@@ -4,9 +4,7 @@ import os.path as osp
 import time
 import json
 import abc
-
 import torch
-
 from utils.torch import initialize
 from utils.logger import Logger
 
