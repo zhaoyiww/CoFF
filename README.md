@@ -63,6 +63,7 @@ This repository provides the official Pytorch implementation of the paper: [Cros
   </ol>
 </details>
 
+<a name="abstract"></a>
 ## 🧠 Abstract
 
 <details>
@@ -71,6 +72,7 @@ This repository provides the official Pytorch implementation of the paper: [Cros
 Point cloud registration has seen significant advancements with the application of deep learning techniques. However, existing approaches often overlook the potential of integrating radiometric information from RGB images. This limitation reduces their effectiveness in aligning point clouds pairs, especially in regions where geometric data alone is insufficient. When used effectively, radiometric information can enhance the registration process by providing context that is missing from purely geometric data. In this paper, we propose CoFF, a novel Cross-modal Feature Fusion method that utilizes both point cloud geometry and RGB images for pairwise point cloud registration. Assuming that the co-registration between point clouds and RGB images is available, CoFF explicitly addresses the challenges where geometric information alone is unclear, such as in regions with symmetric similarity or planar structures, through a two-stage fusion of 3D point cloud features and 2D image features. It incorporates a cross-modal feature fusion module that assigns pixel-wise image features to 3D input point clouds to enhance learned 3D point features, and integrates patch-wise image features with superpoint features to improve the quality of coarse matching. This is followed by a coarse-to-fine matching module that accurately establishes correspondences using the fused features. We extensively evaluate CoFF on four common datasets: 3DMatch, 3DLoMatch, IndoorLRS, and the recently released ScanNet++ datasets. In addition, we assess CoFF on specific subset datasets containing geometrically ambiguous cases. Our experimental results demonstrate that CoFF achieves state-of-the-art registration performance across all benchmarks, including remarkable registration recalls of 95.9% and 81.6% on the widely-used 3DMatch and 3DLoMatch datasets, respectively. CoFF is particularly effective in scenarios with challenging geometric features, provided that RGB images are available and that the overlapping regions exhibit sufficient texture in the RGB images.
 </details>
 
+<a name="code-base-overview"></a>
 ## 🧱 Code base overview
 
 Our code builds upon [GeoTransformer](https://github.com/qinzheng93/GeoTransformer) framework, a 3D geometry-based point cloud registration method. The following key extensions are introduced:
@@ -104,6 +106,7 @@ CoFF is evaluated on the following datasets:
 
 Please follow the [instructions for data preprocessing](./scripts/README.md) to prepare the data and metadata.
 
+<a name="run"></a>
 ## 🚀 Run
 
 We provide our pre-trained model weight for direct testing and evaluation, as well as weights for baseline methods. All weights can be downloaded [here](https://drive.google.com/drive/folders/1pBet7ZwG8aj6H3kezeOppvF_ac-rJ8IU?usp=sharing). Note that all models are trained on the 3DMatch training set and evaluated on the 3DMatch test set, 3DLoMatch, IndoorLRS, and ScanNet++ datasets.
@@ -138,12 +141,14 @@ Then, run the following command to train the model:
 python trainval.py --config ./configs/train/3DMatch.yaml
 ```
 
+<a name="todo-list"></a>
 ## ✅ TODO list
 - [x] Upload data preprocessing scripts.
 - [x] Upload complete training and evaluation code.
 - [x] Upload our pretrained model weight.
 - [ ] Upload our preprocessed data. 
 
+<a name="acknowledgements"></a>
 ## 🤝 Acknowledgements
 
 We sincerely thank the following works and use parts of their official implementations:
@@ -156,7 +161,7 @@ We sincerely thank the following works and use parts of their official implement
 - [Color-ICP](http://redwood-data.org/indoor_lidar_rgbd/) for the IndoorLRS dataset;
 - [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) for the ScanNet++ dataset.
 
-
+<a name="citation"></a>
 ## 🧾 Citation
 
 If you find our code or paper useful, please cite:
