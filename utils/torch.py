@@ -13,9 +13,6 @@ import torch.utils.data
 import torch.backends.cudnn as cudnn
 
 
-# Distributed Data Parallel Utilities
-
-
 def all_reduce_tensor(tensor, world_size=1):
     r"""Average reduce a tensor across all workers."""
     reduced_tensor = tensor.clone()

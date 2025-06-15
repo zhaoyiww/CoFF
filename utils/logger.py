@@ -3,7 +3,6 @@ logging.getLogger('PIL').setLevel(logging.WARNING)
 
 import coloredlogs
 
-
 def create_logger(log_file=None):
     logger = logging.getLogger()
     logger.handlers.clear()
