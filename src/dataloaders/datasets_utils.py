@@ -1,8 +1,6 @@
 from functools import partial
-
 import numpy as np
 import torch, cv2, json
-
 from src.backbone_3d.modules.ops import grid_subsample, radius_search
 from utils.torch import build_dataloader
 import os
@@ -11,8 +9,6 @@ import copy
 from PIL import Image
 from easydict import EasyDict as edict
 
-
-# Stack mode utilities
 
 def list2ndarray(image_pose):
     pose_frame_1 = np.array(image_pose)
@@ -401,252 +397,6 @@ def single_collate_fn_stack_mode(
     return collated_dict
 
 
-# not used
-def registration_collate_fn_stack_mode(
-    data_dicts, num_stages, voxel_size, search_radius, neighbor_limits, precompute_data=True
-):
-    r"""Collate function for registration in stack mode.
-
-    Points are organized in the following order: [ref_1, ..., ref_B, src_1, ..., src_B].
-    The correspondence indices are within each point cloud without accumulation.
-
-    Args:
-        data_dicts (List[Dict])
-        num_stages (int)
-        voxel_size (float)
-        search_radius (float)
-        neighbor_limits (List[int])
-        precompute_data (bool)
-
-    Returns:
-        collated_dict (Dict)
-    """
-    batch_size = len(data_dicts)
-    # merge data with the same key from different samples into a list
-    collated_dict = {}
-    for data_dict in data_dicts:
-        for key, value in data_dict.items():
-            if isinstance(value, np.ndarray):
-                value = torch.from_numpy(value)
-            if key not in collated_dict:
-                collated_dict[key] = []
-            collated_dict[key].append(value)
-
-    # handle special keys: [ref_feats, src_feats] -> feats, [ref_points, src_points] -> points, lengths
-    feats = torch.cat(collated_dict.pop('ref_feats') + collated_dict.pop('src_feats'), dim=0)
-    points_list = collated_dict.pop('ref_points') + collated_dict.pop('src_points')
-    lengths = torch.LongTensor([points.shape[0] for points in points_list])
-    points = torch.cat(points_list, dim=0)
-
-    if batch_size == 1:
-        # remove wrapping brackets if batch_size is 1
-        for key, value in collated_dict.items():
-            collated_dict[key] = value[0]
-
-    collated_dict['features'] = feats
-    if precompute_data:
-        input_dict = precompute_data_stack_mode(points, lengths, num_stages, voxel_size, search_radius, neighbor_limits)
-        collated_dict.update(input_dict)
-    else:
-        collated_dict['points'] = points
-        collated_dict['lengths'] = lengths
-    collated_dict['batch_size'] = batch_size
-
-    ############################################3
-    # add img patch
-    ##########################################################
-    # img patch extraction
-    super_pts_coord = collated_dict['points'][-1]
-    super_pts_length = collated_dict['lengths'][-1]
-    super_pts_neighbor_coord = collated_dict['points'][-2]
-    super_pts_neighbor_index = collated_dict['subsampling'][-1]
-
-    ref_pcd_dir = collated_dict['metadata']['pcd0']
-    src_pcd_dir = collated_dict['metadata']['pcd1']
-
-    #####################################
-    # input ref_pcd_dir
-    # output
-    (pos_ref_1_rot, pose_ref_1_tra, pos_ref_2_rot, pose_ref_2_tra, pos_ref_3_rot, pose_ref_3_tra,
-     color_ref_1, color_ref_2, color_ref_3, camera_intrinsic) = three_view_img_preprocessing(collated_dict, ref_pcd_dir)
-
-    (pos_src_1_rot, pose_src_1_tra, pos_src_2_rot, pose_src_2_tra, pos_src_3_rot, pose_src_3_tra,
-     color_src_1, color_src_2, color_src_3, _) = three_view_img_preprocessing(collated_dict, src_pcd_dir)
-
-    # if aug_src > 0.5:
-    #     ref_points = np.matmul(ref_points, aug_rotation.T)
-    #     rotation = np.matmul(aug_rotation, rotation)
-    #     translation = np.matmul(aug_rotation, translation)
-    # else:
-    #     src_points = np.matmul(src_points, aug_rotation.T)
-    #     rotation = np.matmul(rotation, aug_rotation.T)
-
-    if data_dict['use_augmentation']:
-        aug_rot = data_dict['aug_rotation']
-        if data_dict['aug_src'] > 0.5:
-            ref_1_rot = np.eye(4)
-            ref_1_rot[:3, :3] = np.linalg.inv(aug_rot.T)
-            ref_1_rot = torch.from_numpy(ref_1_rot).float()
-
-            src_1_rot = torch.eye(4).float()
-        else:
-            src_1_rot = np.eye(4)
-            src_1_rot[:3, :3] = np.linalg.inv(aug_rot.T)
-            src_1_rot = torch.from_numpy(src_1_rot).float()
-
-            ref_1_rot = torch.eye(4).float()
-    else:
-        ref_1_rot = torch.eye(4).float()
-        src_1_rot = torch.eye(4).float()
-
-    import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.imshow(color_ref_1)
-    # plt.show()
-
-    img_patch_all, img_patch_length_all, img_patch_idx_all = [], [], []
-
-    img_patch_length = copy.deepcopy(super_pts_length)
-    img_patch_idx = torch.arange(super_pts_coord.shape[0])
-    # img_patch_idx_2 = copy.deepcopy(img_patch_idx)
-    outlier_idx = []
-
-    # set img_size and minimum img_size
-    img_size = 64
-    min_size = 10
-    # all pts, including ref and src
-    for i in range(super_pts_coord.shape[0]):
-        # get indices of neighbors of i, removing fake indices
-        idx_temp = super_pts_neighbor_index[i, :][super_pts_neighbor_index[i, :] < super_pts_neighbor_coord.shape[0]]
-        neigh_i = super_pts_neighbor_coord[idx_temp, :]
-
-        # ref_1_rot = torch.eye(4).float()
-        # src_1_rot = torch.eye(4).float()
-
-        # ref
-        if i < super_pts_length[0]:
-            # neigh_i_raw = copy.deepcopy(neigh_i)
-            # recover the raw pcd before data augmentation
-            neigh_i_raw = np.matmul(neigh_i, ref_1_rot[:3, :3])
-            pts_to_mid = np.matmul(neigh_i_raw, pos_ref_1_rot.T) + pose_ref_1_tra
-            pts_to_frame_1 = copy.deepcopy(neigh_i_raw)
-            # pts_to_frame_1 = np.matmul(neigh_i, ref_1_rot[:3, :3])
-
-            # input camera intrinsics, a list of neigh_i pts, RGB image
-            # output the width and height of each patch: (i, 64, 64, 3)
-            width_1, height_1 = compute_img_range(camera_intrinsic, pts_to_frame_1, color_ref_1)
-            img_size_1 = [width_1[1] - width_1[0], height_1[1] - height_1[0]]
-
-            pts_to_frame_2_tra = pts_to_mid - pose_ref_2_tra
-            pts_to_frame_2 = np.matmul(pts_to_frame_2_tra, pos_ref_2_rot)
-            width_2, height_2 = compute_img_range(camera_intrinsic, pts_to_frame_2, color_ref_2)
-            img_size_2 = [width_2[1] - width_2[0], height_2[1] - height_2[0]]
-
-            pts_to_frame_3_tra = pts_to_mid - pose_ref_3_tra
-            pts_to_frame_3 = np.matmul(pts_to_frame_3_tra, pos_ref_3_rot)
-            width_3, height_3 = compute_img_range(camera_intrinsic, pts_to_frame_3, color_ref_3)
-            img_size_3 = [width_3[1] - width_3[0], height_3[1] - height_3[0]]
-
-            # mask_1 = (img_size_1[0] >= img_size_2[0]) & (img_size_1[1] >= img_size_2[1])
-            # mask_2 = (img_size_1[0] >= img_size_3[0]) & (img_size_1[1] >= img_size_3[1])
-            # mask_3 = (img_size_2[0] >= img_size_3[0]) & (img_size_2[1] >= img_size_3[1])
-
-            mask_1_ = np.sum(img_size_1) >= np.sum(img_size_2)
-            mask_2_ = np.sum(img_size_1) >= np.sum(img_size_3)
-            mask_3_ = np.sum(img_size_2) >= np.sum(img_size_3)
-
-            # print(ref_pcd_dir, i)
-            img_patch = []
-
-            # if ref_pcd_dir != 'train/sun3d-mit_76_417-76-417b_4/cloud_bin_163.pth' or i != 82:
-            # if ref_pcd_dir != 'train/sun3d-harvard_c3-hv_c3_1/cloud_bin_23.pth' or i != 44:
-            #     continue
-
-            # mask_1 = (width_1[1] - width_1[0] > img_size) & (height_1[1] - height_1[0] > img_size)
-            if all(num >= min_size for num in img_size_1) and mask_1_ and mask_2_:
-                img_patch = extract_img_patch(color_ref_1, width_1, height_1, img_size=img_size)
-                # img_patch_2 = extract_img_patch(color_ref_2, width_2, height_2, img_size=64)
-                # img_patch_3 = extract_img_patch(color_ref_3, width_3, height_3, img_size=64)
-            elif all(num >= min_size for num in img_size_2) and not mask_1_ and mask_3_:
-                # img_patch_1 = extract_img_patch(color_ref_1, width_1, height_1, img_size=64)
-                img_patch = extract_img_patch(color_ref_2, width_2, height_2, img_size=img_size)
-                # img_patch_3 = extract_img_patch(color_ref_3, width_3, height_3, img_size=64)
-            elif all(num >= min_size for num in img_size_3):
-                # img_patch_1 = extract_img_patch(color_ref_1, width_1, height_1, img_size=64)
-                # img_patch_2 = extract_img_patch(color_ref_2, width_2, height_2, img_size=64)
-                img_patch = extract_img_patch(color_ref_3, width_3, height_3, img_size=img_size)
-            else:
-                img_patch_length[0] -= 1
-                # remove certain index
-                outlier_idx.append(i)
-                # img_patch_idx_2 = torch.cat((img_patch_idx[:i], img_patch_idx[i + 1:]))
-
-            # plt.figure()
-            # plt.imshow(img_patch)
-            # plt.show()
-        # src
-        else:
-            neigh_i_raw = np.matmul(neigh_i, src_1_rot[:3, :3])
-
-            pts_to_mid = np.matmul(neigh_i_raw, pos_src_1_rot.T) + pose_src_1_tra
-            pts_to_frame_1 = np.matmul(neigh_i, src_1_rot[:3, :3])
-            # pts_to_frame_1 = copy.deepcopy(neigh_i)
-
-            # input camera intrinsics, a list of neigh_i pts, RGB image
-            # output the width and height of each patch: (i, 64, 64, 3)
-            width_1, height_1 = compute_img_range(camera_intrinsic, pts_to_frame_1, color_src_1)
-            img_size_1 = [width_1[1] - width_1[0], height_1[1] - height_1[0]]
-
-            pts_to_frame_2_tra = pts_to_mid - pose_src_2_tra
-            pts_to_frame_2 = np.matmul(pts_to_frame_2_tra, pos_src_2_rot)
-            width_2, height_2 = compute_img_range(camera_intrinsic, pts_to_frame_2, color_src_2)
-            img_size_2 = [width_2[1] - width_2[0], height_2[1] - height_2[0]]
-
-            pts_to_frame_3_tra = pts_to_mid - pose_src_3_tra
-            pts_to_frame_3 = np.matmul(pts_to_frame_3_tra, pos_src_3_rot)
-            width_3, height_3 = compute_img_range(camera_intrinsic, pts_to_frame_3, color_src_3)
-            img_size_3 = [width_3[1] - width_3[0], height_3[1] - height_3[0]]
-
-            mask_1_ = np.sum(img_size_1) >= np.sum(img_size_2)
-            mask_2_ = np.sum(img_size_1) >= np.sum(img_size_3)
-            mask_3_ = np.sum(img_size_2) >= np.sum(img_size_3)
-
-            # print(src_pcd_dir, i)
-            img_patch = []
-
-            # mask_1 = (width_1[1] - width_1[0] > img_size) & (height_1[1] - height_1[0] > img_size)
-            if all(num >= min_size for num in img_size_1) and mask_1_ and mask_2_:
-                img_patch = extract_img_patch(color_src_1, width_1, height_1, img_size=img_size)
-                # img_patch_2 = extract_img_patch(color_ref_2, width_2, height_2, img_size=64)
-                # img_patch_3 = extract_img_patch(color_ref_3, width_3, height_3, img_size=64)
-            elif all(num >= min_size for num in img_size_2) and not mask_1_ and mask_3_:
-                # img_patch_1 = extract_img_patch(color_ref_1, width_1, height_1, img_size=64)
-                img_patch = extract_img_patch(color_src_2, width_2, height_2, img_size=img_size)
-                # img_patch_3 = extract_img_patch(color_ref_3, width_3, height_3, img_size=64)
-            elif all(num >= min_size for num in img_size_3):
-                # img_patch_1 = extract_img_patch(color_ref_1, width_1, height_1, img_size=64)
-                # img_patch_2 = extract_img_patch(color_ref_2, width_2, height_2, img_size=64)
-                img_patch = extract_img_patch(color_src_3, width_3, height_3, img_size=img_size)
-            else:
-                img_patch_length[1] -= 1
-                # remove certain index
-                # img_patch_idx_2 = torch.cat((img_patch_idx[:i], img_patch_idx[i + 1:]))
-                outlier_idx.append(i)
-
-        # print(f'neighs: {neigh_i.shape}')
-        if img_patch != []:
-            img_patch_all.append(img_patch)
-        # img_patch_length_all.append(img_patch_length)
-        # img_patch_idx_all.append(img_patch_idx)
-    collated_dict['img_patch'] = img_patch_all
-    collated_dict['img_patch_length'] = img_patch_length
-
-    img_patch_idx = np.delete(img_patch_idx, outlier_idx)
-    collated_dict['img_patch_idx'] = img_patch_idx
-    ###################################################
-
-    return collated_dict
-
 def registration_collate_fn_stack_mode_3dmatch(
     data_dicts, num_stages, voxel_size, search_radius, neighbor_limits, precompute_data=True
 ):
@@ -718,14 +468,6 @@ def registration_collate_fn_stack_mode_3dmatch(
     (pos_src_1_rot, pose_src_1_tra, pos_src_2_rot, pose_src_2_tra, pos_src_3_rot, pose_src_3_tra,
      color_src_1, color_src_2, color_src_3, _) = three_view_img_preprocessing(collated_dict, src_pcd_dir)
 
-    # if aug_src > 0.5:
-    #     ref_points = np.matmul(ref_points, aug_rotation.T)
-    #     rotation = np.matmul(aug_rotation, rotation)
-    #     translation = np.matmul(aug_rotation, translation)
-    # else:
-    #     src_points = np.matmul(src_points, aug_rotation.T)
-    #     rotation = np.matmul(rotation, aug_rotation.T)
-
     if data_dict['use_augmentation']:
         aug_rot = data_dict['aug_rotation']
         if data_dict['aug_src'] > 0.5:
@@ -744,11 +486,6 @@ def registration_collate_fn_stack_mode_3dmatch(
         ref_1_rot = torch.eye(4).float()
         src_1_rot = torch.eye(4).float()
 
-    import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.imshow(color_ref_1)
-    # plt.show()
-
     img_patch_all, img_patch_length_all, img_patch_idx_all = [], [], []
 
     img_patch_length = copy.deepcopy(super_pts_length)
@@ -764,9 +501,6 @@ def registration_collate_fn_stack_mode_3dmatch(
         # get indices of neighbors of i, removing fake indices
         idx_temp = super_pts_neighbor_index[i, :][super_pts_neighbor_index[i, :] < super_pts_neighbor_coord.shape[0]]
         neigh_i = super_pts_neighbor_coord[idx_temp, :]
-
-        # ref_1_rot = torch.eye(4).float()
-        # src_1_rot = torch.eye(4).float()
 
         # ref
         if i < super_pts_length[0]:
@@ -791,10 +525,6 @@ def registration_collate_fn_stack_mode_3dmatch(
             pts_to_frame_3 = np.matmul(pts_to_frame_3_tra, pos_ref_3_rot)
             width_3, height_3 = compute_img_range(camera_intrinsic, pts_to_frame_3, color_ref_3)
             img_size_3 = [width_3[1] - width_3[0], height_3[1] - height_3[0]]
-
-            # mask_1 = (img_size_1[0] >= img_size_2[0]) & (img_size_1[1] >= img_size_2[1])
-            # mask_2 = (img_size_1[0] >= img_size_3[0]) & (img_size_1[1] >= img_size_3[1])
-            # mask_3 = (img_size_2[0] >= img_size_3[0]) & (img_size_2[1] >= img_size_3[1])
 
             mask_1_ = np.sum(img_size_1) >= np.sum(img_size_2)
             mask_2_ = np.sum(img_size_1) >= np.sum(img_size_3)
@@ -955,15 +685,12 @@ def registration_collate_fn_stack_mode_indoorlrs(
     # ref_pcd_dir = collated_dict['metadata']['pcd0']
     # src_pcd_dir = collated_dict['metadata']['pcd1']
 
-    # path_dir = '../../data'
     scene = collated_dict['scene_name']
 
     ref_pcd_dir = osp.join(scene, str(collated_dict['ref_frame']))
     src_pcd_dir = osp.join(scene, str(collated_dict['src_frame']))
 
     image_list_rgb = os.listdir(osp.join('data', 'IndoorLRS', 'image', scene, 'rgb'))
-    # image_list_depth = os.listdir(osp.join(self.data_path, 'image', self.collated_dict['scene_name'], 'depth'))
-    # sort the image list
     import re
     image_list_rgb.sort(key=lambda y: int(re.findall('\d+', y)[0]))
     image_list_rgb_ref = image_list_rgb[3 * collated_dict['ref_frame']: 3 * (collated_dict['ref_frame'] + 1)]
@@ -988,23 +715,6 @@ def registration_collate_fn_stack_mode_indoorlrs(
     f.close()
     fragment_pose_ref = fragment_pose[5 * collated_dict['ref_frame']: 5 * (collated_dict['ref_frame'] + 1)]
     fragment_pose_src = fragment_pose[5 * collated_dict['src_frame']: 5 * (collated_dict['src_frame'] + 1)]
-
-    #####################################
-    # input ref_pcd_dir
-    # output
-    # (pose_frame_1, pose_frame_2, pose_frame_3, color_ref_1, color_ref_2, color_ref_3, camera_intrinsic) = (
-    #     three_view_img_preprocessing_indoorlrs(collated_dict, path_dir, image_list_rgb_ref, image_pose))
-    #
-    # (pose_frame_1, pose_frame_2, pose_frame_3, color_src_1, color_src_2, color_src_3, camera_intrinsic) = (
-    #     three_view_img_preprocessing_indoorlrs(collated_dict, path_dir, image_list_rgb_src, image_pose))
-
-    # if aug_src > 0.5:
-    #     ref_points = np.matmul(ref_points, aug_rotation.T)
-    #     rotation = np.matmul(aug_rotation, rotation)
-    #     translation = np.matmul(aug_rotation, translation)
-    # else:
-    #     src_points = np.matmul(src_points, aug_rotation.T)
-    #     rotation = np.matmul(rotation, aug_rotation.T)
 
     if data_dict['use_augmentation']:
         aug_rot = data_dict['aug_rotation']
@@ -1279,15 +989,6 @@ def registration_collate_fn_stack_mode_scannetpp(
     color_src_2 = cv2.resize(color_src_2, (640, 480), interpolation=cv2.INTER_AREA)
     color_src_3 = cv2.resize(color_src_3, (640, 480), interpolation=cv2.INTER_AREA)
 
-
-    # if aug_src > 0.5:
-    #     ref_points = np.matmul(ref_points, aug_rotation.T)
-    #     rotation = np.matmul(aug_rotation, rotation)
-    #     translation = np.matmul(aug_rotation, translation)
-    # else:
-    #     src_points = np.matmul(src_points, aug_rotation.T)
-    #     rotation = np.matmul(rotation, aug_rotation.T)
-
     if data_dict['use_augmentation']:
         aug_rot = data_dict['aug_rotation']
         if data_dict['aug_src'] > 0.5:
@@ -1327,9 +1028,6 @@ def registration_collate_fn_stack_mode_scannetpp(
         idx_temp = super_pts_neighbor_index[i, :][super_pts_neighbor_index[i, :] < super_pts_neighbor_coord.shape[0]]
         neigh_i = super_pts_neighbor_coord[idx_temp, :]
 
-        # ref_1_rot = torch.eye(4).float()
-        # src_1_rot = torch.eye(4).float()
-
         # ref
         if i < super_pts_length[0]:
             # neigh_i_raw = copy.deepcopy(neigh_i)
@@ -1354,20 +1052,12 @@ def registration_collate_fn_stack_mode_scannetpp(
             width_3, height_3 = compute_img_range(camera_intrinsic_3, pts_to_frame_3, color_ref_3)
             img_size_3 = [width_3[1] - width_3[0], height_3[1] - height_3[0]]
 
-            # mask_1 = (img_size_1[0] >= img_size_2[0]) & (img_size_1[1] >= img_size_2[1])
-            # mask_2 = (img_size_1[0] >= img_size_3[0]) & (img_size_1[1] >= img_size_3[1])
-            # mask_3 = (img_size_2[0] >= img_size_3[0]) & (img_size_2[1] >= img_size_3[1])
-
             mask_1_ = np.sum(img_size_1) >= np.sum(img_size_2)
             mask_2_ = np.sum(img_size_1) >= np.sum(img_size_3)
             mask_3_ = np.sum(img_size_2) >= np.sum(img_size_3)
 
             # print(ref_pcd_dir, i)
             img_patch = []
-
-            # if ref_pcd_dir != 'train/sun3d-mit_76_417-76-417b_4/cloud_bin_163.pth' or i != 82:
-            # if ref_pcd_dir != 'train/sun3d-harvard_c3-hv_c3_1/cloud_bin_23.pth' or i != 44:
-            #     continue
 
             # mask_1 = (width_1[1] - width_1[0] > img_size) & (height_1[1] - height_1[0] > img_size)
             if all(num >= min_size for num in img_size_1) and mask_1_ and mask_2_:
@@ -1436,15 +1126,10 @@ def registration_collate_fn_stack_mode_scannetpp(
                 img_patch = extract_img_patch(color_src_3, width_3, height_3, img_size=img_size)
             else:
                 img_patch_length[1] -= 1
-                # remove certain index
-                # img_patch_idx_2 = torch.cat((img_patch_idx[:i], img_patch_idx[i + 1:]))
                 outlier_idx.append(i)
 
-        # print(f'neighs: {neigh_i.shape}')
         if img_patch != []:
             img_patch_all.append(img_patch)
-        # img_patch_length_all.append(img_patch_length)
-        # img_patch_idx_all.append(img_patch_idx)
     collated_dict['img_patch'] = img_patch_all
     collated_dict['img_patch_length'] = img_patch_length
 

@@ -3,7 +3,6 @@ from src.dataloaders.datasets.indoorlrs import IndoorLRSDataset
 from src.dataloaders.datasets.scannetpp import ScanNetppDataset
 
 from src.dataloaders.datasets_utils import (
-    registration_collate_fn_stack_mode,
     registration_collate_fn_stack_mode_3dmatch,
     # specific data preprocessing for indooelrs, scannetpp
     registration_collate_fn_stack_mode_indoorlrs,
@@ -81,10 +80,9 @@ def test_data_loader(cfg, benchmark):
     #     cfg.backbone.init_radius,
     # )
 
-    # fix the neighbor limits for different datasets, avoiding reloading the training set
-    neighbor_limits = [53, 34, 34, 38]
-    # use a default setting to get rid of reloading 3DMatch training set during inference,
+    # use default neighbor limits to get rid of reloading 3DMatch training set during inference,
     # the inference result may be slightly different to the previous one
+    neighbor_limits = [53, 34, 34, 38]
 
     if benchmark.startswith('3DMatch') or benchmark.startswith('3DLoMatch'):
         test_dataset = ThreeDMatchPairDataset(
@@ -129,17 +127,8 @@ def test_data_loader(cfg, benchmark):
             point_limit=cfg.test.point_limit,
             use_augmentation=False,
         )
-        # a = registration_collate_fn_stack_mode
-        ############
-        # # skip the first k samples during debugging
-        # from torch.utils.data import Subset
-        # # 458 has large memory
-        # subset = Subset(test_dataset, range(459, len(test_dataset)))
-        # ############
-
         test_loader = build_dataloader_stack_mode(
             test_dataset,
-            # subset,
             registration_collate_fn_stack_mode_scannetpp,
             cfg.kpconv.num_stages,
             cfg.kpconv.init_voxel_size,
@@ -149,23 +138,5 @@ def test_data_loader(cfg, benchmark):
             num_workers=cfg.test.num_workers,
             shuffle=False,
         )
-
-    # test_dataset = ThreeDMatchPairDataset(
-    #     cfg.data.dataset_root,
-    #     benchmark,
-    #     point_limit=cfg.test.point_limit,
-    #     use_augmentation=False,
-    # )
-    # test_loader = build_dataloader_stack_mode(
-    #     test_dataset,
-    #     registration_collate_fn_stack_mode,
-    #     cfg.backbone.num_stages,
-    #     cfg.backbone.init_voxel_size,
-    #     cfg.backbone.init_radius,
-    #     neighbor_limits,
-    #     batch_size=cfg.test.batch_size,
-    #     num_workers=cfg.test.num_workers,
-    #     shuffle=False,
-    # )
 
     return test_loader, neighbor_limits

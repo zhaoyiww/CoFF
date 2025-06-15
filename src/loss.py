@@ -87,10 +87,7 @@ class ImgMatchingLoss(nn.Module):
     def forward(self, output_dict):
         img_patch_ref_feats = output_dict['img_patch_ref_feats']
         img_patch_src_feats = output_dict['img_patch_src_feats']
-        # selected_gt_pair = output_dict['selected_gt_pair']
         selected_overlaps = output_dict['selected_overlaps']
-        # sel_gt_ref_node_corr_indices = selected_gt_pair[:, 0]
-        # sel_gt_src_node_corr_indices = selected_gt_pair[:, 1]
 
         sel_gt_ref_node_corr_indices = torch.arange(len(selected_overlaps))
         sel_gt_src_node_corr_indices = torch.arange(len(selected_overlaps))
@@ -122,11 +119,7 @@ class OverallLoss(nn.Module):
     def forward(self, output_dict, data_dict):
         coarse_loss = self.coarse_loss(output_dict)
         fine_loss = self.fine_loss(output_dict, data_dict)
-
-        # img_joint_loss = self.joint_loss(output_dict)
         img_matching_loss = self.img_matching_loss(output_dict)
-
-        # matchability_loss_pcd, matchability_loss_fuse, matchability_recall_pcd, matchability_recall_fuse = self.matchability_loss(output_dict)
 
         loss = (self.weight_coarse_loss * coarse_loss + self.weight_fine_loss * fine_loss + self.weight_img_matching_loss * img_matching_loss)
 
@@ -225,26 +218,12 @@ class Evaluator(nn.Module):
         rmse = torch.linalg.norm(realigned_src_points_f - src_points, dim=1).mean()
         recall = torch.lt(rmse, self.acceptance_rmse).float()
 
-        # old recall
-        # ref_indices_c = output_dict['ref_node_corr_indices']
-        # src_indices_c = output_dict['src_node_corr_indices']
-        # # src_indices_c = output_dict['src_node_corr_indices']
-        # coords_dist_c = torch.sqrt(square_distance(output_dict['ref_points_c'][ref_indices_c][None,:,:],
-        #                                            output_dict['src_points_c'][src_indices_c][None,:,:]).squeeze(0))
-        #
-        # feats_dist_c = torch.sqrt(square_distance(output_dict['ref_feats_c'][ref_indices_c][None,:,:],
-        #                                           output_dict['src_feats_c'][ref_indices_c][None,:,:],normalised=True)).squeeze(0)
-        # recall_predator_c = get_recall(coords_dist_c, feats_dist_c)
-        # recall_predator_f = get_recall(coords_dist_c, feats_dist_c)
-
         return rre, rte, rmse, recall
-        # return rre, rte, rmse, recall, recall_predator_c, recall_predator_f
 
     def forward(self, output_dict, data_dict):
         c_precision = self.evaluate_coarse(output_dict)
         f_precision = self.evaluate_fine(output_dict, data_dict)
         rre, rte, rmse, recall = self.evaluate_registration(output_dict, data_dict)
-        # rre, rte, rmse, recall, recall_predator_c, recall_predator_f = self.evaluate_registration(output_dict, data_dict)
 
         return {
             'PIR': c_precision,
