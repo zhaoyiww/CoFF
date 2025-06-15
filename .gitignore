@@ -188,3 +188,4 @@ data/IndoorLRS/data/**
 data/IndoorLRS/image/**
 data/ScanNetpp/data/**
 data/ScanNetpp/image/**
+*.pth
