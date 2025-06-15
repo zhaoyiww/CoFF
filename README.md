@@ -90,8 +90,10 @@ We recommend users refer to [GeoTransformer](https://github.com/qinzheng93/GeoTr
 
 > **Note**: 3DM = 3DMatch, 3DLM = 3DLoMatch; `_P` indicates the 'Planar' subset of each dataset.
 
+<a name="installation"></a>
 ## 🛠️ Installation
 
+<a name="data-preparation"></a>
 ## 🗂️ Data preparation
 
 CoFF is evaluated on the following datasets:
