@@ -184,3 +184,5 @@ weights/
 # Ignore data and image folders under all datasets in data/
 data/*/data/
 data/*/image/
+data/*/data/*
+data/*/image/*
