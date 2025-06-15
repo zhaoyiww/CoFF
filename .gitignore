@@ -181,3 +181,6 @@ weights/
 **/image/**
 **/image/
 **/outputs/**
+# Ignore data and image folders under all datasets in data/
+data/*/data/
+data/*/image/
