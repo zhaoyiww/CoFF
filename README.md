@@ -113,7 +113,7 @@ We provide our pre-trained model weight for direct testing and evaluation, as we
 
 To use CoFF with the pre-trained model, place the downloaded weights in the `./weights/` folder.
 
-### Test and evaluate on datasets
+### 🔍 Test and evaluate on datasets
 
 1. Modify the config file for the target dataset under the `./configs/test/` folder. Set the appropriate paths and parameters. Default configurations for all four datasets are provided.
 
