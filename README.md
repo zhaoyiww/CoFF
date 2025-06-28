@@ -95,6 +95,24 @@ We recommend users refer to [GeoTransformer](https://github.com/qinzheng93/GeoTr
 <a name="installation"></a>
 ## 🛠️ Installation
 
+To run the code, please follow these steps:
+1. **Clone the repository**:
+
+```bash
+# Clone the CoFF repository
+git clone git@github.com:zhaoyiww/CoFF.git
+cd CoFF
+
+# Create and activate a new Conda environment with Python 3.8
+conda create -n coff python=3.8 -y
+conda activate coff
+# Install PyTorch and its dependencies (CUDA 11.8 version)
+pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu118
+# Install other required packages
+pip install -r requirements.txt
+python setup.py build develop
+```
+
 <a name="data-preparation"></a>
 ## 🗂️ Data preparation
 
