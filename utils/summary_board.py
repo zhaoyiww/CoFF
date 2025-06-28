@@ -3,8 +3,8 @@
 # ---------------------------------------------------------------------------- #
 from typing import Optional, List
 
-from average_meter import AverageMeter
-from common import get_print_format
+from utils.average_meter import AverageMeter
+from utils.common import get_print_format
 
 class SummaryBoard:
     r"""Summary board."""

@@ -12,6 +12,7 @@ from utils.summary_board import SummaryBoard
 from utils.timer import Timer
 from utils.torch import all_reduce_tensors, release_cuda, initialize
 from utils.logger import Logger
+import json
 
 
 def inject_default_parser(parser=None):

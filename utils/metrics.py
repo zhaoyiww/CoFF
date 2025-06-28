@@ -5,8 +5,8 @@
 from typing import Optional
 import numpy as np
 import torch
-from o3d_tools import array2tensor, get_nearest_neighbor
-from common import transfrom2_rot_tran
+from utils.o3d_tools import array2tensor, get_nearest_neighbor
+from utils.common import transfrom2_rot_tran
 from scipy.spatial import cKDTree
 from scipy.spatial.transform import Rotation
 

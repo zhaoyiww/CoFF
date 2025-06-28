@@ -202,7 +202,12 @@ class Evaluator(nn.Module):
         src_corr_points = output_dict['src_corr_points']
         src_corr_points = apply_transform(src_corr_points, transform)
         corr_distances = torch.linalg.norm(ref_corr_points - src_corr_points, dim=1)
-        precision = torch.lt(corr_distances, self.acceptance_radius).float().mean()
+        # precision = torch.lt(corr_distances, self.acceptance_radius).float().mean()
+        # Avoid NaN error
+        if corr_distances.numel() == 0:
+            precision = torch.tensor(0.0, device=corr_distances.device)
+        else:
+            precision = torch.lt(corr_distances, self.acceptance_radius).float().mean()
         return precision
 
     @torch.no_grad()
