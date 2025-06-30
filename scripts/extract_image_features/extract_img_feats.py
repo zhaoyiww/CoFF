@@ -9,7 +9,7 @@ from datetime import datetime
 import torch
 from easydict import EasyDict as edict
 
-from backbones import build_backbone
+from backbone_2d_resnet import build_backbone
 from utils.common import load_yaml
 from utils.o3d_tools import *
 

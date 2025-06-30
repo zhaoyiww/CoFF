@@ -37,8 +37,8 @@ To extract dense image features, please refer to [extract_img_feats.py](./extrac
 ### ScanNet++
 
 - Download raw RGB and depth images from the [ScanNet++ official website](https://kaldir.vc.in.tum.de/scannetpp/).
-- As fragments are not provided, use [`generate_pcd_fragments_scannetpp`](./preprocess/generate_pcd_fragments_scannetpp.py) to generate them. We segment every 20 consecutive frames into a point cloud fragment.
-- Use script ['preprocess_scannetpp.py'](./preprocess/preprocess_scannetpp.py) to generate metadata files (e.g., `ScanNetpp.pkl` and `benchmarks/`).
+- As fragments are not provided, use [`generate_pcd_fragments_scannetpp.py`](./preprocess/generate_pcd_fragments_scannetpp.py) to generate them. We segment every 20 consecutive frames into a point cloud fragment.
+- Use script [`preprocess_scannetpp.py`](./preprocess/preprocess_scannetpp.py) to generate metadata files (e.g., `ScanNetpp.pkl` and `benchmarks/`).
     
 
 The directory structure for pixel-wise image feature extraction:
