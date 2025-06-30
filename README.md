@@ -147,7 +147,7 @@ This will extract features from the test dataset. To evaluate the registration p
 bash eval.sh
 ```
 
-For IndoorLRS and ScanNet++ datasets, additionally run 'benchmark_indoorlrs.py' and 'benchmark_scannetpp.py' in the './scripts/' folder to complete the evaluation.
+For IndoorLRS and ScanNet++ datasets, additionally run [`benchmark_indoorlrs.py`](./scripts/benchmark_indoorlrs.py) and [`benchmark_scannetpp.py`](./scripts/benchmark_scannetpp.py) in the './scripts/' folder to complete the evaluation.
 
 ### 🏋️ Train your own model
 
@@ -164,7 +164,7 @@ python trainval.py --config ./configs/train/3DMatch.yaml
 - [x] Upload data preprocessing scripts.
 - [x] Upload complete training and evaluation code.
 - [x] Upload our pretrained model weight.
-- [ ] Upload our preprocessed data. 
+- [x] Upload our preprocessed data. 
 
 <a name="acknowledgements"></a>
 ## 🤝 Acknowledgements
