@@ -6,7 +6,7 @@ This document provides an overview of data preprocessing pipelines for four benc
 - **Subset creation**: Tools for constructing geometrically planar subsets.
 - **Image feature extraction**: Offline scripts to extract pixel-wise image features
 
-Preprocessed data can be downloaded from [our storage link](xxx) (note: **ScanNet++ is not included due to licensing restrictions and must be requested individually**). If you'd like to preprocess the datasets yourself, or prepare your own data, follow the steps below.
+Preprocessed data can be downloaded from [CoFF preprocessed data](https://www.research-collection.ethz.ch/handle/20.500.11850/742804) (note: **ScanNet++ is not included due to licensing restrictions and must be requested individually**). If you'd like to preprocess the datasets yourself, or prepare your own data, follow the steps below.
 
 ## Preprocessing instructions
 
