@@ -127,7 +127,7 @@ Please follow the [instructions for data preprocessing](./scripts/README.md) to 
 <a name="run"></a>
 ## 🚀 Run
 
-We provide our pre-trained model weight for direct testing and evaluation, as well as weights for baseline methods. All weights can be downloaded [here](https://drive.google.com/drive/folders/1pBet7ZwG8aj6H3kezeOppvF_ac-rJ8IU?usp=sharing). Note that all models are trained on the 3DMatch training set and evaluated on the 3DMatch test set, 3DLoMatch, IndoorLRS, and ScanNet++ datasets.
+We provide our pre-trained model weight for direct testing and evaluation, as well as weights for baseline methods. All weights can be downloaded [here](https://huggingface.co/zhaoyiww/CoFF_pretrained_weights/tree/main). Note that all models are trained on the 3DMatch training set and evaluated on the 3DMatch test set, 3DLoMatch, IndoorLRS, and ScanNet++ datasets.
 
 To use CoFF with the pre-trained model, place the downloaded weights in the `./weights/` folder.
 
