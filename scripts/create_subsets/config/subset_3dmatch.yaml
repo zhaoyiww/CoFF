@@ -1,0 +1,16 @@
+misc:
+  gpu_mode: True
+  verbose: True
+  verbose_freq: 100
+
+dir:
+  input_root: BAFU_results
+  output_root: output/
+  pretrain_root: ./weights/img_checkpoint.pth"
+
+data:
+  img_feats_dim: 128
+  num_images: 3
+  dataset: 3DMatch                # 3DMatch, IndoorLRS, or ScanNetpp
+  split_type: [train, test]       # [x, x, x] for full dataset, [xx, xx, xx] for subset datasets
+  fusion_type: complement         # average, complement or random

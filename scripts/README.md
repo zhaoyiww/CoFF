@@ -19,8 +19,35 @@ To extract dense image features, please refer to [extract_img_feats.py](./extrac
 
 ```
 ./3DMatch
-├── geometry
-└── image
+├── geometry/                     # Preprocessed 3D fragments (point clouds)
+│   ├── train/
+│   │   ├── 7-scenes-chess/
+│   │   │   ├── cloud_bin_0.pth          # Torch-saved point cloud (N×3)
+│   │   │   ├── cloud_bin_0.info.txt     # Associated metadata (frame ids, poses, etc.)
+│   │   │   └── ...
+│   │   └── 7-scenes-fire/
+│   │       └── ...
+│   └── test/
+│       └── ...
+│
+├── image/                        # Raw RGB-D image sequences with camera parameters
+│   ├── 7-scenes-chess/
+│   │   ├── camera-intrinsics.txt       # 3×3 intrinsic matrix
+│   │   ├── seq-01/
+│   │   │   ├── frame-000000.color.png  # RGB image
+│   │   │   ├── frame-000000.depth.png  # Depth image (16-bit)
+│   │   │   ├── frame-000000.pose.txt   # 4×4 camera pose (world-to-camera)
+│   │   │   └── ...
+│   │   └── seq-02/
+│   │       └── ...
+│   └── 7-scenes-fire/
+│       └── ...
+│
+└── metadata/                    # Precomputed training/test splits and keypairs
+    ├── 3DMatch_converted.pkl         # Benchmark split (standard)
+    ├── 3DLoMatch_converted.pkl       # Benchmark split (low-overlap)
+    ├── train_converted.pkl           # Train split
+    └── val_converted.pkl             # Validation split
 ```
 
 ### IndoorLRS
@@ -54,7 +81,6 @@ The directory structure for pixel-wise image feature extraction:
 └── metadata
     └── split
         └── test_scannetpp.txt
-
 ```
 
 ## Final data structure for training and testing

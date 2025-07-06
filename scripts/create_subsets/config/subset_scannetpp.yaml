@@ -1,0 +1,8 @@
+dir:
+  input_root: /scratch/zhawang/projects/CoFF/scripts/extract_image_features/outputs/ScanNetpp/
+  output_root: /scratch/zhawang/projects/CoFF/scripts/extract_image_features/outputs/ScanNetpp/outputs/
+
+data:
+  benchmark_name: ScanNetpp_test
+  in_plane_threshold: 0.7
+  dataset: ScanNetpp

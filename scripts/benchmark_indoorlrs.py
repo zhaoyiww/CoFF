@@ -1,10 +1,13 @@
-# Conpute metrics regarding the results of evaluate (modified from Predator)
-# for IndoorLRS dataset
+# ---------------------------------------------------------------------------- #
+# Compute metrics regarding the results of evaluation for the IndoorLRS dataset
+# ---------------------------------------------------------------------------- #
 import numpy as np
 import os
 from tqdm import tqdm
 import pandas as pd
 from utils.metrics import compute_registration_rmse, compute_registration_error
+
+test_path_name = 'IndoorLRS'
 
 # IndoorLRS, or IndoorLRS_planar
 benchmark = 'IndoorLRS'
@@ -28,12 +31,12 @@ registration_rmse_all, rre_all, rte_all = defaultdict(list), defaultdict(list), 
 registration_recall_all = []
 n_valids = []
 
-# # add flags
-# all_flags, all_est_traj = [], []
+# add flags
+all_flags, all_est_traj = [], []
 
 for scene in scenes:
     gt_path = f"../data/IndoorLRS/metadata/benchmarks/{benchmark}/{scene}/gt.log"
-    est_path = f"../outputs/IndoorLRS/registration/{benchmark}/{scene}/est.log"
+    est_path = f"../outputs/{test_path_name}/registration/{benchmark}/{scene}/est.log"
 
     pairs, pose_gt = read_log(gt_path)
     sorted_indices = np.lexsort((pairs[:, 1], pairs[:, 0]))
@@ -89,7 +92,7 @@ for scene in scenes:
     # all_flags.append(flags_per_scene)
     # all_est_traj.append(np.array(est_traj_per_scene))
 
-# # save all set
+# save all set
 # reg_set = dict()
 # reg_set['est_traj'] = all_est_traj
 # reg_set['all_flags'] = all_flags
@@ -109,6 +112,7 @@ weighted_rre = (np.array(n_valids) * np.array(rre_all['median'])).sum() / np.sum
 weighted_rte = (np.array(n_valids) * np.array(rte_all['median'])).sum() / np.sum(n_valids)
 weighted_rr = (np.array(n_valids) * np.array(registration_recall_all)).sum() / np.sum(n_valids)
 
+# average all scenes, balance the variety of scenes. We report this metric in the paper
 print("====================================")
 print(f"weighted mean registration_rmse_all:{np.mean(np.array(registration_rmse_all['mean'])):.3f}")
 print(f"weighted mean rre_all:{np.mean(np.array(rre_all['mean'])):.3f}")
